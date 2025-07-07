@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/hrs-asano-claude-mcp-trello-badge.png)](https://mseep.ai/app/hrs-asano-claude-mcp-trello)
+
 # Claude MCP Trello
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Trello boards. This server enables seamless integration with Trello's API while handling rate limiting, type safety, and error handling automatically.

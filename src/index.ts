@@ -13,6 +13,7 @@ import cors from "cors";
 
 import { TrelloClient } from "./trello-client.js";
 import {
+  validateString,
   validateGetCardsListRequest,
   validateGetRecentActivityRequest,
   validateAddCardRequest,
@@ -20,6 +21,13 @@ import {
   validateArchiveCardRequest,
   validateAddListRequest,
   validateArchiveListRequest,
+  validateBoardIdRequest,
+  validateCardIdRequest,
+  validateMoveCardRequest,
+  validateAddCommentRequest,
+  validateCreateChecklistRequest,
+  validateUpdateCheckItemRequest,
+  validateDeleteChecklistRequest,
 } from "./validators.js";
 
 // --------------------------------------------------
@@ -179,27 +187,181 @@ const trelloDownloadAttachmentTool: Tool = {
   },
 };
 
+const trelloGetBoardsTool: Tool = {
+  name: "trello_get_boards",
+  description: "Retrieves all boards for the authenticated user.",
+  inputSchema: {
+    type: "object",
+    properties: {},
+  },
+};
+
+const trelloGetBoardTool: Tool = {
+  name: "trello_get_board",
+  description: "Retrieves details of a specific board including name, description, preferences, and label names.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      boardId: { type: "string", description: "The ID of the Trello board" },
+    },
+    required: ["boardId"],
+  },
+};
+
+const trelloGetBoardLabelsTool: Tool = {
+  name: "trello_get_board_labels",
+  description: "Retrieves all labels defined on a board. Use this to get label IDs for creating or updating cards with labels.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      boardId: { type: "string", description: "The ID of the Trello board" },
+    },
+    required: ["boardId"],
+  },
+};
+
+const trelloGetBoardMembersTool: Tool = {
+  name: "trello_get_board_members",
+  description: "Retrieves all members of a board.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      boardId: { type: "string", description: "The ID of the Trello board" },
+    },
+    required: ["boardId"],
+  },
+};
+
+const trelloGetCardTool: Tool = {
+  name: "trello_get_card",
+  description: "Retrieves full details of a specific card including description, labels, members, due date, and checklist info.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the Trello card" },
+    },
+    required: ["cardId"],
+  },
+};
+
+const trelloMoveCardTool: Tool = {
+  name: "trello_move_card",
+  description: "Moves a card to a different list.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card to move" },
+      listId: { type: "string", description: "The ID of the destination list" },
+    },
+    required: ["cardId", "listId"],
+  },
+};
+
+const trelloAddCommentTool: Tool = {
+  name: "trello_add_comment",
+  description: "Adds a comment to a card.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card to comment on" },
+      text: { type: "string", description: "The comment text" },
+    },
+    required: ["cardId", "text"],
+  },
+};
+
+const trelloGetChecklistsTool: Tool = {
+  name: "trello_get_checklists",
+  description: "Retrieves all checklists on a card, including their check items and completion state.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the Trello card" },
+    },
+    required: ["cardId"],
+  },
+};
+
+const trelloCreateChecklistTool: Tool = {
+  name: "trello_create_checklist",
+  description: "Creates a new checklist on a card.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card to add the checklist to" },
+      name: { type: "string", description: "Name of the checklist" },
+    },
+    required: ["cardId", "name"],
+  },
+};
+
+const trelloUpdateChecklistItemTool: Tool = {
+  name: "trello_update_checklist_item",
+  description: "Updates a check item on a card. Can change its name and/or completion state.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card containing the check item" },
+      checkItemId: { type: "string", description: "The ID of the check item to update" },
+      name: { type: "string", description: "New name for the check item (optional)" },
+      state: { type: "string", enum: ["complete", "incomplete"], description: "New state (optional)" },
+    },
+    required: ["cardId", "checkItemId"],
+  },
+};
+
+const trelloDeleteChecklistTool: Tool = {
+  name: "trello_delete_checklist",
+  description: "Deletes an entire checklist from a card. This removes all check items in it.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card containing the checklist" },
+      checklistId: { type: "string", description: "The ID of the checklist to delete" },
+    },
+    required: ["cardId", "checklistId"],
+  },
+};
+
 const ALL_TOOLS: Tool[] = [
-  trelloGetCardsByListTool,
+  // Board operations
+  trelloGetBoardsTool,
+  trelloGetBoardTool,
+  trelloGetBoardLabelsTool,
+  trelloGetBoardMembersTool,
+  // List operations
   trelloGetListsTool,
-  trelloGetRecentActivityTool,
-  trelloAddCardTool,
-  trelloUpdateCardTool,
-  trelloArchiveCardTool,
   trelloAddListTool,
   trelloArchiveListTool,
-  trelloGetMyCardsTool,
-  trelloSearchAllBoardsTool,
+  // Card operations
+  trelloGetCardsByListTool,
+  trelloGetCardTool,
+  trelloAddCardTool,
+  trelloUpdateCardTool,
+  trelloMoveCardTool,
+  trelloArchiveCardTool,
+  // Card sub-resources
+  trelloAddCommentTool,
+  trelloGetChecklistsTool,
+  trelloCreateChecklistTool,
+  trelloUpdateChecklistItemTool,
+  trelloDeleteChecklistTool,
   trelloGetCardAttachmentsTool,
   trelloDownloadAttachmentTool,
+  // Search & user
+  trelloGetMyCardsTool,
+  trelloSearchAllBoardsTool,
+  trelloGetRecentActivityTool,
 ];
 
 // --------------------------------------------------
 // Server factory — creates a new Server instance per session
 // --------------------------------------------------
+type ToolResult = { content: { type: string; text: string }[] };
+
 function createServer(trelloClient: TrelloClient): Server {
   const server = new Server(
-    { name: "Trello MCP Server", version: "0.2.0" },
+    { name: "Trello MCP Server", version: "0.3.0" },
     { capabilities: { tools: {} } },
   );
 
@@ -207,83 +369,122 @@ function createServer(trelloClient: TrelloClient): Server {
     tools: ALL_TOOLS,
   }));
 
+  const handlers: Record<string, (args: Record<string, unknown>) => Promise<ToolResult>> = {
+    // Board operations
+    trello_get_boards: async () => ({
+      content: [{ type: "text", text: JSON.stringify(await trelloClient.getBoards()) }],
+    }),
+    trello_get_board: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getBoard(boardId)) }] };
+    },
+    trello_get_board_labels: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getBoardLabels(boardId)) }] };
+    },
+    trello_get_board_members: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getBoardMembers(boardId)) }] };
+    },
+
+    // List operations
+    trello_get_lists: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getLists(boardId)) }] };
+    },
+    trello_add_list: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      const name = validateString(args.name, "name");
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.addList(boardId, name)) }] };
+    },
+    trello_archive_list: async (args) => {
+      const { listId } = validateArchiveListRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.archiveList(listId)) }] };
+    },
+
+    // Card operations
+    trello_get_cards_by_list: async (args) => {
+      const { listId } = validateGetCardsListRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getCardsByList(listId)) }] };
+    },
+    trello_get_card: async (args) => {
+      const { cardId } = validateCardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getCard(cardId)) }] };
+    },
+    trello_add_card: async (args) => {
+      const validated = validateAddCardRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.addCard(validated)) }] };
+    },
+    trello_update_card: async (args) => {
+      const validated = validateUpdateCardRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.updateCard(validated)) }] };
+    },
+    trello_move_card: async (args) => {
+      const { cardId, listId } = validateMoveCardRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.moveCard(cardId, listId)) }] };
+    },
+    trello_archive_card: async (args) => {
+      const { cardId } = validateArchiveCardRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.archiveCard(cardId)) }] };
+    },
+
+    // Card sub-resources
+    trello_add_comment: async (args) => {
+      const { cardId, text } = validateAddCommentRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.addComment(cardId, text)) }] };
+    },
+    trello_get_checklists: async (args) => {
+      const { cardId } = validateCardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getChecklists(cardId)) }] };
+    },
+    trello_create_checklist: async (args) => {
+      const { cardId, name } = validateCreateChecklistRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.createChecklist(cardId, name)) }] };
+    },
+    trello_update_checklist_item: async (args) => {
+      const { cardId, checkItemId, name, state } = validateUpdateCheckItemRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.updateCheckItem(cardId, checkItemId, { name, state: state as "complete" | "incomplete" | undefined })) }] };
+    },
+    trello_delete_checklist: async (args) => {
+      const { cardId, checklistId } = validateDeleteChecklistRequest(args);
+      await trelloClient.deleteChecklist(cardId, checklistId);
+      return { content: [{ type: "text", text: JSON.stringify({ success: true }) }] };
+    },
+    trello_get_card_attachments: async (args) => {
+      const { cardId } = validateCardIdRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getCardAttachments(cardId)) }] };
+    },
+    trello_download_attachment: async (args) => {
+      const cardId = validateString(args.cardId, "cardId");
+      const attachmentId = validateString(args.attachmentId, "attachmentId");
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.downloadAttachment(cardId, attachmentId)) }] };
+    },
+
+    // Search & user
+    trello_get_my_cards: async () => ({
+      content: [{ type: "text", text: JSON.stringify(await trelloClient.getMyCards()) }],
+    }),
+    trello_search_all_boards: async (args) => {
+      const query = validateString(args.query, "query");
+      const limit = (args.limit as number) ?? 10;
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.searchAllBoards(query, limit)) }] };
+    },
+    trello_get_recent_activity: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      const limit = (args.limit as number) ?? 10;
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getRecentActivity(boardId, limit)) }] };
+    },
+  };
+
   server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
+    const handler = handlers[request.params.name];
+    if (!handler) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${request.params.name}` }) }],
+      };
+    }
     try {
-      const args = (request.params.arguments ?? {}) as Record<string, unknown>;
-
-      switch (request.params.name) {
-        case "trello_get_cards_by_list": {
-          const { listId } = validateGetCardsListRequest(args);
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getCardsByList(listId)) }] };
-        }
-
-        case "trello_get_lists": {
-          const boardId = args.boardId as string;
-          if (!boardId) throw new Error("Missing required argument: boardId");
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getLists(boardId)) }] };
-        }
-
-        case "trello_get_recent_activity": {
-          const boardId = args.boardId as string;
-          if (!boardId) throw new Error("Missing required argument: boardId");
-          const { limit } = validateGetRecentActivityRequest(args);
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getRecentActivity(boardId, limit ?? 10)) }] };
-        }
-
-        case "trello_add_card": {
-          const validated = validateAddCardRequest(args);
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.addCard(validated)) }] };
-        }
-
-        case "trello_update_card": {
-          const validated = validateUpdateCardRequest(args);
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.updateCard(validated)) }] };
-        }
-
-        case "trello_archive_card": {
-          const { cardId } = validateArchiveCardRequest(args);
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.archiveCard(cardId)) }] };
-        }
-
-        case "trello_add_list": {
-          const { name } = validateAddListRequest(args);
-          const boardId = args.boardId as string;
-          if (!boardId) throw new Error("Missing required argument: boardId");
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.addList(boardId, name)) }] };
-        }
-
-        case "trello_archive_list": {
-          const { listId } = validateArchiveListRequest(args);
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.archiveList(listId)) }] };
-        }
-
-        case "trello_get_my_cards": {
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getMyCards()) }] };
-        }
-
-        case "trello_search_all_boards": {
-          const query = args.query as string;
-          if (!query) throw new Error("Missing required argument: query");
-          const limit = (args.limit as number) ?? 10;
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.searchAllBoards(query, limit)) }] };
-        }
-
-        case "trello_get_card_attachments": {
-          const cardId = args.cardId as string;
-          if (!cardId) throw new Error("Missing required argument: cardId");
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getCardAttachments(cardId)) }] };
-        }
-
-        case "trello_download_attachment": {
-          const cardId = args.cardId as string;
-          const attachmentId = args.attachmentId as string;
-          if (!cardId || !attachmentId) throw new Error("Missing required arguments: cardId, attachmentId");
-          return { content: [{ type: "text", text: JSON.stringify(await trelloClient.downloadAttachment(cardId, attachmentId)) }] };
-        }
-
-        default:
-          throw new Error(`Unknown tool: ${request.params.name}`);
-      }
+      return await handler((request.params.arguments ?? {}) as Record<string, unknown>);
     } catch (error) {
       return {
         content: [{

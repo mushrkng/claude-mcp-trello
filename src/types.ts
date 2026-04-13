@@ -15,6 +15,19 @@ export interface TrelloCard {
   dateLastActivity: string;
 }
 
+export interface TrelloBoard {
+  id: string;
+  name: string;
+  desc: string;
+  closed: boolean;
+  url: string;
+  shortUrl: string;
+  dateLastActivity: string;
+  idOrganization: string | null;
+  prefs: Record<string, unknown>;
+  labelNames: Record<string, string>;
+}
+
 export interface TrelloList {
   id: string;
   name: string;
@@ -54,6 +67,40 @@ export interface TrelloLabel {
   id: string;
   name: string;
   color: string;
+}
+
+export interface TrelloCheckItem {
+  id: string;
+  name: string;
+  state: "complete" | "incomplete";
+  idChecklist: string;
+  pos: number;
+}
+
+export interface TrelloChecklist {
+  id: string;
+  name: string;
+  idBoard: string;
+  idCard: string;
+  pos: number;
+  checkItems: TrelloCheckItem[];
+}
+
+export interface TrelloComment {
+  id: string;
+  idMemberCreator: string;
+  data: {
+    text: string;
+    card: { id: string; name: string };
+    board: { id: string; name: string };
+  };
+  type: string;
+  date: string;
+  memberCreator: {
+    id: string;
+    fullName: string;
+    username: string;
+  };
 }
 
 export interface TrelloMember {

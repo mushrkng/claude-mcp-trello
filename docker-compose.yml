@@ -1,0 +1,10 @@
+services:
+  trello-mcp:
+    build: .
+    container_name: trello-mcp
+    ports:
+      - "3100:3000"
+    environment:
+      - TRELLO_API_KEY=${TRELLO_API_KEY}
+      - TRELLO_TOKEN=${TRELLO_TOKEN}
+    restart: unless-stopped

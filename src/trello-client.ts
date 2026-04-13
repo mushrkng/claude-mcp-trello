@@ -24,15 +24,16 @@ export class TrelloClient {
     });
   }
 
-  private async handleRequest<T>(request: () => Promise<T>): Promise<T> {
+  private async handleRequest<T>(request: () => Promise<T>, retries = 0): Promise<T> {
+    const MAX_RETRIES = 3;
     try {
       return await request();
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 429) {
-          // Rate limit exceeded, wait and retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return this.handleRequest(request);
+        if (error.response?.status === 429 && retries < MAX_RETRIES) {
+          const delay = Math.min(1000 * Math.pow(2, retries), 8000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return this.handleRequest(request, retries + 1);
         }
         throw new Error(`Trello API error: ${error.response?.data?.message ?? error.message}`);
       }

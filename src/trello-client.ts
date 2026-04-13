@@ -48,12 +48,6 @@ export class TrelloClient {
     });
   }
 
-  /**
-   * Retrieves all lists for a specific board.
-   *
-   * @param boardId - The ID of the board to get lists from
-   * @returns Promise resolving to an array of TrelloList objects
-   */
   async getBoards(): Promise<TrelloBoard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/boards');

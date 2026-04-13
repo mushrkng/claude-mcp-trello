@@ -15,11 +15,9 @@ import { TrelloClient } from "./trello-client.js";
 import {
   validateString,
   validateGetCardsListRequest,
-  validateGetRecentActivityRequest,
   validateAddCardRequest,
   validateUpdateCardRequest,
   validateArchiveCardRequest,
-  validateAddListRequest,
   validateArchiveListRequest,
   validateBoardIdRequest,
   validateCardIdRequest,

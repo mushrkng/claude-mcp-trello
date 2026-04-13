@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment } from './types.js';
+import { TrelloConfig, TrelloCard, TrelloList, TrelloAction, TrelloMember, TrelloAttachment, TrelloBoard, TrelloChecklist, TrelloCheckItem, TrelloComment, TrelloLabel } from './types.js';
 import { createTrelloRateLimiters } from './rate-limiter.js';
 
 export class TrelloClient {
@@ -44,6 +44,40 @@ export class TrelloClient {
   async getCardsByList(listId: string): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get(`/lists/${listId}/cards`);
+      return response.data;
+    });
+  }
+
+  /**
+   * Retrieves all lists for a specific board.
+   *
+   * @param boardId - The ID of the board to get lists from
+   * @returns Promise resolving to an array of TrelloList objects
+   */
+  async getBoards(): Promise<TrelloBoard[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get('/members/me/boards');
+      return response.data;
+    });
+  }
+
+  async getBoard(boardId: string): Promise<TrelloBoard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${boardId}`);
+      return response.data;
+    });
+  }
+
+  async getBoardLabels(boardId: string): Promise<TrelloLabel[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${boardId}/labels`);
+      return response.data;
+    });
+  }
+
+  async getBoardMembers(boardId: string): Promise<TrelloMember[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/boards/${boardId}/members`);
       return response.data;
     });
   }
@@ -153,6 +187,61 @@ export class TrelloClient {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/cards');
       return response.data;
+    });
+  }
+
+  async getCard(cardId: string): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/cards/${cardId}`);
+      return response.data;
+    });
+  }
+
+  async moveCard(cardId: string, listId: string): Promise<TrelloCard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(`/cards/${cardId}`, {
+        idList: listId,
+      });
+      return response.data;
+    });
+  }
+
+  async addComment(cardId: string, text: string): Promise<TrelloComment> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post(`/cards/${cardId}/actions/comments`, null, {
+        params: { text },
+      });
+      return response.data;
+    });
+  }
+
+  async getChecklists(cardId: string): Promise<TrelloChecklist[]> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.get(`/cards/${cardId}/checklists`);
+      return response.data;
+    });
+  }
+
+  async createChecklist(cardId: string, name: string): Promise<TrelloChecklist> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post(`/cards/${cardId}/checklists`, { name });
+      return response.data;
+    });
+  }
+
+  async updateCheckItem(cardId: string, checkItemId: string, params: {
+    name?: string;
+    state?: "complete" | "incomplete";
+  }): Promise<TrelloCheckItem> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.put(`/cards/${cardId}/checkItem/${checkItemId}`, params);
+      return response.data;
+    });
+  }
+
+  async deleteChecklist(cardId: string, checklistId: string): Promise<void> {
+    return this.handleRequest(async () => {
+      await this.axiosInstance.delete(`/cards/${cardId}/checklists/${checklistId}`);
     });
   }
 

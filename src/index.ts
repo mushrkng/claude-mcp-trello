@@ -26,6 +26,13 @@ import {
   validateCreateChecklistRequest,
   validateUpdateCheckItemRequest,
   validateDeleteChecklistRequest,
+  validateCreateBoardRequest,
+  validateUpdateBoardRequest,
+  validateUpdateListRequest,
+  validateCreateLabelRequest,
+  validateUpdateLabelRequest,
+  validateLabelIdRequest,
+  validateCardLabelRequest,
 } from "./validators.js";
 
 // --------------------------------------------------
@@ -321,16 +328,154 @@ const trelloDeleteChecklistTool: Tool = {
   },
 };
 
+const trelloCreateBoardTool: Tool = {
+  name: "trello_create_board",
+  description: "Creates a new Trello board. Returns the created board including its ID and URL.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Board name (1-16384 chars)" },
+      desc: { type: "string", description: "Board description (optional)" },
+      idOrganization: { type: "string", description: "Workspace/organization ID to place the board in (optional)" },
+      defaultLabels: { type: "boolean", description: "Create the default set of labels (default: true)" },
+      defaultLists: { type: "boolean", description: "Create default lists To Do / Doing / Done (default: true). Set false if you plan to add custom lists." },
+    },
+    required: ["name"],
+  },
+};
+
+const trelloUpdateBoardTool: Tool = {
+  name: "trello_update_board",
+  description: "Updates board properties: name, description, closed (archive), or preferences (e.g. prefs.background, prefs.permissionLevel).",
+  inputSchema: {
+    type: "object",
+    properties: {
+      boardId: { type: "string", description: "The ID of the Trello board" },
+      name: { type: "string", description: "New board name (optional)" },
+      desc: { type: "string", description: "New board description (optional)" },
+      closed: { type: "boolean", description: "Archive/unarchive the board (optional)" },
+      prefs: {
+        type: "object",
+        description: "Board preferences object. Keys become prefs/<key>. Common keys: background, permissionLevel, voting, comments, invitations, selfJoin, cardCovers.",
+      },
+    },
+    required: ["boardId"],
+  },
+};
+
+const trelloDeleteBoardTool: Tool = {
+  name: "trello_delete_board",
+  description: "Permanently deletes a board. Destructive — use trello_update_board with closed=true for archive instead.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      boardId: { type: "string", description: "The ID of the board to delete" },
+    },
+    required: ["boardId"],
+  },
+};
+
+const trelloUpdateListTool: Tool = {
+  name: "trello_update_list",
+  description: "Updates a list's properties: rename, reposition, or close/reopen.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      listId: { type: "string", description: "The ID of the list to update" },
+      name: { type: "string", description: "New list name (optional)" },
+      closed: { type: "boolean", description: "Archive/unarchive the list (optional)" },
+      pos: { description: "Position: number, 'top', or 'bottom' (optional)" },
+    },
+    required: ["listId"],
+  },
+};
+
+const trelloCreateLabelTool: Tool = {
+  name: "trello_create_label",
+  description: "Creates a new label on a board. Colors: yellow, purple, blue, red, green, orange, black, sky, pink, lime, or null for no color.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      boardId: { type: "string", description: "The ID of the board to create the label on" },
+      name: { type: "string", description: "Label name" },
+      color: { type: ["string", "null"], description: "Label color (see description). Use null for no color." },
+    },
+    required: ["boardId", "name", "color"],
+  },
+};
+
+const trelloUpdateLabelTool: Tool = {
+  name: "trello_update_label",
+  description: "Updates a label's name and/or color. Colors: yellow, purple, blue, red, green, orange, black, sky, pink, lime, or null.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      labelId: { type: "string", description: "The ID of the label to update" },
+      name: { type: "string", description: "New label name (optional)" },
+      color: { type: ["string", "null"], description: "New label color, or null for no color (optional)" },
+    },
+    required: ["labelId"],
+  },
+};
+
+const trelloDeleteLabelTool: Tool = {
+  name: "trello_delete_label",
+  description: "Deletes a label from its board. Automatically removes it from all cards.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      labelId: { type: "string", description: "The ID of the label to delete" },
+    },
+    required: ["labelId"],
+  },
+};
+
+const trelloAddLabelToCardTool: Tool = {
+  name: "trello_add_label_to_card",
+  description: "Attaches a label to a card. Prefer this over trello_update_card for additive label changes.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card" },
+      labelId: { type: "string", description: "The ID of the label to attach" },
+    },
+    required: ["cardId", "labelId"],
+  },
+};
+
+const trelloRemoveLabelFromCardTool: Tool = {
+  name: "trello_remove_label_from_card",
+  description: "Removes a label from a card without affecting other labels.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      cardId: { type: "string", description: "The ID of the card" },
+      labelId: { type: "string", description: "The ID of the label to remove" },
+    },
+    required: ["cardId", "labelId"],
+  },
+};
+
 const ALL_TOOLS: Tool[] = [
   // Board operations
   trelloGetBoardsTool,
   trelloGetBoardTool,
+  trelloCreateBoardTool,
+  trelloUpdateBoardTool,
+  trelloDeleteBoardTool,
   trelloGetBoardLabelsTool,
   trelloGetBoardMembersTool,
   // List operations
   trelloGetListsTool,
   trelloAddListTool,
+  trelloUpdateListTool,
   trelloArchiveListTool,
+  // Label operations
+  trelloCreateLabelTool,
+  trelloUpdateLabelTool,
+  trelloDeleteLabelTool,
+  trelloAddLabelToCardTool,
+  trelloRemoveLabelFromCardTool,
   // Card operations
   trelloGetCardsByListTool,
   trelloGetCardTool,
@@ -359,7 +504,7 @@ type ToolResult = { content: { type: string; text: string }[] };
 
 function createServer(trelloClient: TrelloClient): Server {
   const server = new Server(
-    { name: "Trello MCP Server", version: "0.3.0" },
+    { name: "Trello MCP Server", version: "0.4.0" },
     { capabilities: { tools: {} } },
   );
 
@@ -384,6 +529,19 @@ function createServer(trelloClient: TrelloClient): Server {
       const { boardId } = validateBoardIdRequest(args);
       return { content: [{ type: "text", text: JSON.stringify(await trelloClient.getBoardMembers(boardId)) }] };
     },
+    trello_create_board: async (args) => {
+      const validated = validateCreateBoardRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.createBoard(validated)) }] };
+    },
+    trello_update_board: async (args) => {
+      const validated = validateUpdateBoardRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.updateBoard(validated)) }] };
+    },
+    trello_delete_board: async (args) => {
+      const { boardId } = validateBoardIdRequest(args);
+      await trelloClient.deleteBoard(boardId);
+      return { content: [{ type: "text", text: JSON.stringify({ success: true }) }] };
+    },
 
     // List operations
     trello_get_lists: async (args) => {
@@ -398,6 +556,34 @@ function createServer(trelloClient: TrelloClient): Server {
     trello_archive_list: async (args) => {
       const { listId } = validateArchiveListRequest(args);
       return { content: [{ type: "text", text: JSON.stringify(await trelloClient.archiveList(listId)) }] };
+    },
+    trello_update_list: async (args) => {
+      const validated = validateUpdateListRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.updateList(validated)) }] };
+    },
+
+    // Label operations
+    trello_create_label: async (args) => {
+      const validated = validateCreateLabelRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.createLabel(validated)) }] };
+    },
+    trello_update_label: async (args) => {
+      const validated = validateUpdateLabelRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.updateLabel(validated)) }] };
+    },
+    trello_delete_label: async (args) => {
+      const { labelId } = validateLabelIdRequest(args);
+      await trelloClient.deleteLabel(labelId);
+      return { content: [{ type: "text", text: JSON.stringify({ success: true }) }] };
+    },
+    trello_add_label_to_card: async (args) => {
+      const { cardId, labelId } = validateCardLabelRequest(args);
+      return { content: [{ type: "text", text: JSON.stringify(await trelloClient.addLabelToCard(cardId, labelId)) }] };
+    },
+    trello_remove_label_from_card: async (args) => {
+      const { cardId, labelId } = validateCardLabelRequest(args);
+      await trelloClient.removeLabelFromCard(cardId, labelId);
+      return { content: [{ type: "text", text: JSON.stringify({ success: true }) }] };
     },
 
     // Card operations

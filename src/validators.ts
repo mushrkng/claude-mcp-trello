@@ -190,3 +190,152 @@ export function validateDeleteChecklistRequest(args: Record<string, unknown>): {
     checklistId: validateString(args.checklistId, 'checklistId'),
   };
 }
+
+function validateOptionalBoolean(value: unknown): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'boolean') {
+    throw new McpError(ErrorCode.InvalidParams, 'value must be a boolean');
+  }
+  return value;
+}
+
+function validateOptionalRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new McpError(ErrorCode.InvalidParams, 'value must be an object');
+  }
+  return value as Record<string, unknown>;
+}
+
+const LABEL_COLORS = new Set([
+  'yellow', 'purple', 'blue', 'red', 'green',
+  'orange', 'black', 'sky', 'pink', 'lime',
+]);
+
+function validateLabelColor(value: unknown, field: string): string | null {
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new McpError(ErrorCode.InvalidParams, `${field} must be a string`);
+  }
+  if (!LABEL_COLORS.has(value)) {
+    throw new McpError(ErrorCode.InvalidParams, `${field} must be one of: ${[...LABEL_COLORS].join(', ')}, or null`);
+  }
+  return value;
+}
+
+function validateOptionalLabelColor(value: unknown, field: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  return validateLabelColor(value, field);
+}
+
+export function validateCreateBoardRequest(args: Record<string, unknown>): {
+  name: string;
+  desc?: string;
+  idOrganization?: string;
+  defaultLabels?: boolean;
+  defaultLists?: boolean;
+} {
+  if (!args.name) {
+    throw new McpError(ErrorCode.InvalidParams, 'name is required');
+  }
+  return {
+    name: validateString(args.name, 'name'),
+    desc: validateOptionalString(args.desc),
+    idOrganization: validateOptionalString(args.idOrganization),
+    defaultLabels: validateOptionalBoolean(args.defaultLabels),
+    defaultLists: validateOptionalBoolean(args.defaultLists),
+  };
+}
+
+export function validateUpdateBoardRequest(args: Record<string, unknown>): {
+  boardId: string;
+  name?: string;
+  desc?: string;
+  closed?: boolean;
+  prefs?: Record<string, unknown>;
+} {
+  if (!args.boardId) {
+    throw new McpError(ErrorCode.InvalidParams, 'boardId is required');
+  }
+  return {
+    boardId: validateString(args.boardId, 'boardId'),
+    name: validateOptionalString(args.name),
+    desc: validateOptionalString(args.desc),
+    closed: validateOptionalBoolean(args.closed),
+    prefs: validateOptionalRecord(args.prefs),
+  };
+}
+
+export function validateUpdateListRequest(args: Record<string, unknown>): {
+  listId: string;
+  name?: string;
+  closed?: boolean;
+  pos?: number | string;
+} {
+  if (!args.listId) {
+    throw new McpError(ErrorCode.InvalidParams, 'listId is required');
+  }
+  let pos: number | string | undefined;
+  if (args.pos !== undefined) {
+    if (typeof args.pos === 'number' || typeof args.pos === 'string') {
+      pos = args.pos;
+    } else {
+      throw new McpError(ErrorCode.InvalidParams, 'pos must be a number or a string (e.g. "top", "bottom")');
+    }
+  }
+  return {
+    listId: validateString(args.listId, 'listId'),
+    name: validateOptionalString(args.name),
+    closed: validateOptionalBoolean(args.closed),
+    pos,
+  };
+}
+
+export function validateCreateLabelRequest(args: Record<string, unknown>): {
+  boardId: string;
+  name: string;
+  color: string | null;
+} {
+  if (!args.boardId || !args.name) {
+    throw new McpError(ErrorCode.InvalidParams, 'boardId and name are required');
+  }
+  return {
+    boardId: validateString(args.boardId, 'boardId'),
+    name: validateString(args.name, 'name'),
+    color: validateLabelColor(args.color ?? null, 'color'),
+  };
+}
+
+export function validateUpdateLabelRequest(args: Record<string, unknown>): {
+  labelId: string;
+  name?: string;
+  color?: string | null;
+} {
+  if (!args.labelId) {
+    throw new McpError(ErrorCode.InvalidParams, 'labelId is required');
+  }
+  return {
+    labelId: validateString(args.labelId, 'labelId'),
+    name: validateOptionalString(args.name),
+    color: validateOptionalLabelColor(args.color, 'color'),
+  };
+}
+
+export function validateLabelIdRequest(args: Record<string, unknown>): { labelId: string } {
+  if (!args.labelId) {
+    throw new McpError(ErrorCode.InvalidParams, 'labelId is required');
+  }
+  return {
+    labelId: validateString(args.labelId, 'labelId'),
+  };
+}
+
+export function validateCardLabelRequest(args: Record<string, unknown>): { cardId: string; labelId: string } {
+  if (!args.cardId || !args.labelId) {
+    throw new McpError(ErrorCode.InvalidParams, 'cardId and labelId are required');
+  }
+  return {
+    cardId: validateString(args.cardId, 'cardId'),
+    labelId: validateString(args.labelId, 'labelId'),
+  };
+}

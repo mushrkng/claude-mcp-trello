@@ -177,6 +177,127 @@ export class TrelloClient {
     });
   }
 
+  async updateList(params: {
+    listId: string;
+    name?: string;
+    closed?: boolean;
+    pos?: number | string;
+  }): Promise<TrelloList> {
+    return this.handleRequest(async () => {
+      const body: Record<string, unknown> = {};
+      if (params.name !== undefined) body.name = params.name;
+      if (params.closed !== undefined) body.closed = params.closed;
+      if (params.pos !== undefined) body.pos = params.pos;
+      const response = await this.axiosInstance.put(`/lists/${params.listId}`, body);
+      return response.data;
+    });
+  }
+
+  // Board CRUD ---------------------------------------------------------------
+
+  async createBoard(params: {
+    name: string;
+    desc?: string;
+    idOrganization?: string;
+    defaultLabels?: boolean;
+    defaultLists?: boolean;
+  }): Promise<TrelloBoard> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/boards/', null, {
+        params: {
+          name: params.name,
+          desc: params.desc,
+          idOrganization: params.idOrganization,
+          defaultLabels: params.defaultLabels,
+          defaultLists: params.defaultLists,
+        },
+      });
+      return response.data;
+    });
+  }
+
+  async updateBoard(params: {
+    boardId: string;
+    name?: string;
+    desc?: string;
+    closed?: boolean;
+    prefs?: Record<string, unknown>;
+  }): Promise<TrelloBoard> {
+    return this.handleRequest(async () => {
+      const body: Record<string, unknown> = {};
+      if (params.name !== undefined) body.name = params.name;
+      if (params.desc !== undefined) body.desc = params.desc;
+      if (params.closed !== undefined) body.closed = params.closed;
+      if (params.prefs) {
+        for (const [k, v] of Object.entries(params.prefs)) {
+          body[`prefs/${k}`] = v;
+        }
+      }
+      const response = await this.axiosInstance.put(`/boards/${params.boardId}`, body);
+      return response.data;
+    });
+  }
+
+  async deleteBoard(boardId: string): Promise<void> {
+    return this.handleRequest(async () => {
+      await this.axiosInstance.delete(`/boards/${boardId}`);
+    });
+  }
+
+  // Label CRUD ---------------------------------------------------------------
+
+  async createLabel(params: {
+    boardId: string;
+    name: string;
+    color: string | null;
+  }): Promise<TrelloLabel> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post('/labels', null, {
+        params: {
+          idBoard: params.boardId,
+          name: params.name,
+          color: params.color ?? '',
+        },
+      });
+      return response.data;
+    });
+  }
+
+  async updateLabel(params: {
+    labelId: string;
+    name?: string;
+    color?: string | null;
+  }): Promise<TrelloLabel> {
+    return this.handleRequest(async () => {
+      const body: Record<string, unknown> = {};
+      if (params.name !== undefined) body.name = params.name;
+      if (params.color !== undefined) body.color = params.color ?? '';
+      const response = await this.axiosInstance.put(`/labels/${params.labelId}`, body);
+      return response.data;
+    });
+  }
+
+  async deleteLabel(labelId: string): Promise<void> {
+    return this.handleRequest(async () => {
+      await this.axiosInstance.delete(`/labels/${labelId}`);
+    });
+  }
+
+  async addLabelToCard(cardId: string, labelId: string): Promise<{ idLabels: string[] }> {
+    return this.handleRequest(async () => {
+      const response = await this.axiosInstance.post(`/cards/${cardId}/idLabels`, null, {
+        params: { value: labelId },
+      });
+      return response.data;
+    });
+  }
+
+  async removeLabelFromCard(cardId: string, labelId: string): Promise<void> {
+    return this.handleRequest(async () => {
+      await this.axiosInstance.delete(`/cards/${cardId}/idLabels/${labelId}`);
+    });
+  }
+
   async getMyCards(): Promise<TrelloCard[]> {
     return this.handleRequest(async () => {
       const response = await this.axiosInstance.get('/members/me/cards');

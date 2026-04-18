@@ -1,6 +1,6 @@
 {
   "name": "trello-mcp-server",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Trello MCP server with Streamable HTTP transport",
   "type": "module",
   "main": "build/index.js",
